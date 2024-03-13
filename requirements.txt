@@ -1,0 +1,9 @@
+pyodbc
+pandas
+openpyxl
+xlrd
+sqlite3
+
+pip3 install pyodbc numpy pandas openpyxl xlrd xlwt wget xlsxwriter ssl tqdm sqlite3
+
+pyinstaller --onefile ZiiPOS_SQLiteToSQLServer_Converter.py
