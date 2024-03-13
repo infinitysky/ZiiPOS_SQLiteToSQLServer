@@ -59,13 +59,13 @@ def writeToSQLFile(tableName,Data):
     if os.path.exists(fileName):
         os.remove(fileName)
         
-    else:
-        f = open(fileName, "a")
-        f.write("delete from "+tableName+" ; \n")
-        f.write("SET IDENTITY_INSERT "+ tableName+" ON; \n")
-        f.write(sql)
-        f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
-        f.close()
+    
+    f = open(fileName, "a")
+    f.write("delete from "+tableName+" ; \n")
+    f.write("SET IDENTITY_INSERT "+ tableName+" ON; \n")
+    f.write(sql)
+    f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
+    f.close()
         
 
 
