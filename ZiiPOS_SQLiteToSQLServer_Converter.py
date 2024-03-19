@@ -586,16 +586,46 @@ def writeToSingleSQLFile(tableName,cols,f_values):
     fileName = SingleSqlFile
     if os.path.exists(fileName):
         f = open(fileName, "a", encoding='utf-8')
-        f.write("\ndelete from "+tableName+" ; ")
-    if  tableName!="SequenceID":
+        f.write("\ntruncate table "+tableName+" ; ")
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":
         f.write("\nSET IDENTITY_INSERT "+ tableName+" ON; \n")
     sql = f"insert into {tableName} ({cols}) values {f_values}; " 
     f.write(sql)
-    if  tableName!="SequenceID":  
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":  
         f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
     f.close()
+
+
     
-           
+def writeToSingleSQLFileType2(tableName,cols,values):
+    fileName = SingleSqlFile
+    if os.path.exists(fileName):
+        f = open(fileName, "a", encoding='utf-8')
+        f.write("\ntruncate table "+tableName+" ; ")
+        
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":
+        f.write("\nSET IDENTITY_INSERT "+ tableName+" ON; \n")
+        
+    f = open(fileName, "a", encoding='utf-8')
+    f.write("\ntruncate table "+tableName+" ; ")
+    
+    if tableName!="SequenceID" and tableName!="DiscountSchema" :
+        f.write("\nSET IDENTITY_INSERT "+ tableName+" ON;")
+      
+    
+    dataIndex =0
+    while dataIndex < len(values):
+          values[dataIndex] = re.sub(r"('None')", "NULL", values[dataIndex])
+          values[dataIndex] = re.sub(r"('nan')", "0", values[dataIndex])
+          values[dataIndex] = re.sub(r"('0.0')", "0", values[dataIndex])
+          sql = f"\ninsert into {tableName} ({cols}) values ({values[dataIndex]}); " 
+          f.write(sql)
+          dataIndex=dataIndex+1
+        
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":  
+        f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
+    f.close()
+               
 
 def closesystem():
     sys.exit()
@@ -632,20 +662,71 @@ def writeToSQLFile(tableName,Data):
         
     print("SQL " + tableName)
     f = open(fileName, "a", encoding='utf-8')
-    f.write("\ndelete from "+tableName+" ; ")
+    f.write("\ntruncate table "+tableName+" ; ")
     
-    if tableName!="SequenceID":
+    if tableName!="SequenceID" and tableName!="DiscountSchema" :
         f.write("\nSET IDENTITY_INSERT "+ tableName+" ON;")
         
     sql = f"insert into {tableName} ({cols}) values {f_values}; " 
     f.write(sql)
     
-    if  tableName!="SequenceID":  
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":  
         f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
     f.close()
     
     if tableName!="OrderH" and tableName!="OrderI" and tableName!="RecvAcct":
       writeToSingleSQLFile(tableName,cols,f_values)
+
+
+
+def writeToSQLFileLineByLine(tableName,Data):
+      
+    Data = Data.replace("'","''", regex=True)
+
+    
+    cols = ', '.join(Data.columns.to_list()) 
+    vals = []
+    for index, r in Data.iterrows():
+        row = []
+        for x in r:
+            row.append(f"'{str(x)}'")
+
+        row_str = ', '.join(row)
+        vals.append(row_str)
+     
+    fileName=directory+'\\'+tableName +'.sql'
+    if os.path.exists(fileName):
+        os.remove(fileName)
+        
+        
+    print("SQL " + tableName)
+    f = open(fileName, "a", encoding='utf-8')
+    f.write("\ntruncate table "+tableName+" ; ")
+    
+    if tableName!="SequenceID" and tableName!="DiscountSchema" :
+        f.write("\nSET IDENTITY_INSERT "+ tableName+" ON;")
+        
+    dataIndex =0
+    
+    while dataIndex < len(vals):
+          vals[dataIndex] = re.sub(r"('None')", "NULL", vals[dataIndex])
+          vals[dataIndex] = re.sub(r"('nan')", "0", vals[dataIndex])
+          vals[dataIndex] = re.sub(r"('0.0')", "0", vals[dataIndex])
+          
+          sql = f"\ninsert into {tableName} ({cols}) values ({vals[dataIndex]}); " 
+          f.write(sql)
+          dataIndex=dataIndex+1
+          
+    if  tableName!="SequenceID" and tableName!="DiscountSchema":  
+        f.write("\nSET IDENTITY_INSERT "+ tableName+" OFF;\n")
+    f.close()
+          
+    if tableName!="OrderH" and tableName!="OrderI" and tableName!="RecvAcct":
+          writeToSingleSQLFileType2(tableName,cols,vals)
+    
+    
+  
+
 
 
 
@@ -671,7 +752,7 @@ def processAssessMenuTable(SqliteDBFilePath):
     
     QuerySize = len(AccessMenu)
     if QuerySize>0:
-        writeToSQLFile("AccessMenu",AccessMenu)
+        writeToSQLFileLineByLine("AccessMenu",AccessMenu)
         writeToExcelFile("AccessMenu",AccessMenu)
     
     
@@ -686,7 +767,8 @@ def processDiscountRateTableTable(SqliteDBFilePath):
     
     QuerySize = len(DiscountRateTable)
     if QuerySize>0:
-        writeToSQLFile("DiscountRateTable",DiscountRateTable)
+        DiscountRateTable["DiscountRate"]=pd.to_numeric(DiscountRateTable["DiscountRate"])
+        writeToSQLFileLineByLine("DiscountRateTable",DiscountRateTable)
         writeToExcelFile("DiscountRateTable",DiscountRateTable)
     
     
@@ -704,7 +786,7 @@ def processDiscountSchemaTable(SqliteDBFilePath):
     
     QuerySize = len(DiscountSchema)
     if QuerySize>0:
-        writeToSQLFile("DiscountSchema",DiscountSchema)
+        writeToSQLFileLineByLine("DiscountSchema",DiscountSchema)
         writeToExcelFile("DiscountSchema",DiscountSchema)  
     
    
@@ -720,7 +802,8 @@ def processChargeScopeTable(SqliteDBFilePath):
     Connection.close()
     QuerySize = len(ChargeScope)
     if QuerySize>0:
-        writeToSQLFile("ChargeScope",ChargeScope)
+        ChargeScope["ChargeRate"]=pd.to_numeric(ChargeScope["ChargeRate"])
+        writeToSQLFileLineByLine("ChargeScope",ChargeScope)
         writeToExcelFile("ChargeScope",ChargeScope)      
       
         
@@ -736,7 +819,7 @@ def processDrawerDeviceTable(SqliteDBFilePath):
     Connection.close()
     QuerySize = len(DrawerDevice)
     if QuerySize>0:
-        writeToSQLFile("DrawerDevice",DrawerDevice)
+        writeToSQLFileLineByLine("DrawerDevice",DrawerDevice)
         writeToExcelFile("DrawerDevice",DrawerDevice)  
 
 
@@ -749,7 +832,7 @@ def processMachineIDTable(SqliteDBFilePath):
     Connection.close()
     QuerySize = len(MachineID)
     if QuerySize>0:
-        writeToSQLFile("MachineID",MachineID)
+        writeToSQLFileLineByLine("MachineID",MachineID)
         writeToExcelFile("MachineID",MachineID)  
         
 
@@ -761,8 +844,9 @@ def processPaymentTable(SqliteDBFilePath):
     Connection.close()
     QuerySize = len(Payment)
     if QuerySize>0:
-       
-        writeToSQLFile("Payment",Payment)
+        Payment["SurchargeRate"] = pd.to_numeric(Payment["SurchargeRate"] )
+        Payment["SpecialChargeRate"] = pd.to_numeric(Payment["SpecialChargeRate"])
+        writeToSQLFileLineByLine("Payment",Payment)
         writeToExcelFile("Payment",Payment)  
 
 
@@ -775,7 +859,7 @@ def processPrintConditionTable(SqliteDBFilePath):
   
     QuerySize = len(PrintCondition)
     if QuerySize>0:
-        writeToSQLFile("PrintCondition",PrintCondition)
+        writeToSQLFileLineByLine("PrintCondition",PrintCondition)
         writeToExcelFile("PrintCondition",PrintCondition)  
         
 
@@ -789,7 +873,7 @@ def processPrinterDeviceTable(SqliteDBFilePath):
     QuerySize = len(PrinterDevice)
     if QuerySize>0:
        
-        writeToSQLFile("PrinterDevice",PrinterDevice)
+        writeToSQLFileLineByLine("PrinterDevice",PrinterDevice)
         writeToExcelFile("PrinterDevice",PrinterDevice)  
         
         
@@ -808,8 +892,8 @@ def processPrinterDeviceItemTable(SqliteDBFilePath):
   
     QuerySize = len(PrinterDeviceItem)
     if QuerySize>0:
-       
-        writeToSQLFile("PrinterDeviceItem",PrinterDeviceItem)
+  
+        writeToSQLFileLineByLine("PrinterDeviceItem",PrinterDeviceItem)
         writeToExcelFile("PrinterDeviceItem",PrinterDeviceItem)  
         
                 
@@ -823,7 +907,7 @@ def processProfileTable(SqliteDBFilePath):
     QuerySize = len(Profile)
     if QuerySize>0:
         
-        writeToSQLFile("Profile",Profile)
+        writeToSQLFileLineByLine("Profile",Profile)
         writeToExcelFile("Profile",Profile)  
         
         
@@ -839,7 +923,7 @@ def processSequenceIDTable(SqliteDBFilePath):
     QuerySize = len(SequenceID)
     if QuerySize>0:
         
-        writeToSQLFile("SequenceID",SequenceID)
+        writeToSQLFileLineByLine("SequenceID",SequenceID)
         writeToExcelFile("SequenceID",SequenceID)  
         
 
@@ -854,7 +938,7 @@ def processTablePageTable(SqliteDBFilePath):
     QuerySize = len(TablePage)
     if QuerySize>0:
         
-        writeToSQLFile("TablePage",TablePage)
+        writeToSQLFileLineByLine("TablePage",TablePage)
         writeToExcelFile("TablePage",TablePage)  
         
         
@@ -872,7 +956,7 @@ def processTableSetTable(SqliteDBFilePath):
     QuerySize = len(TableSet)
     if QuerySize>0:
         
-        writeToSQLFile("TableSet",TableSet)
+        writeToSQLFileLineByLine("TableSet",TableSet)
         writeToExcelFile("TableSet",TableSet)  
         
 
@@ -886,7 +970,7 @@ def processSysparameterTable(SqliteDBFilePath):
     QuerySize = len(sysparameter)
     if QuerySize>0:
         
-        writeToSQLFile("sysparameter",sysparameter)
+        writeToSQLFileLineByLine("sysparameter",sysparameter)
         writeToExcelFile("sysparameter",sysparameter)  
         
    
@@ -899,7 +983,7 @@ def processspecialdaytableTable(SqliteDBFilePath):
   
     QuerySize = len(specialdaytable)
     if QuerySize>0:
-        writeToSQLFile("specialdaytable",specialdaytable)
+        writeToSQLFileLineByLine("specialdaytable",specialdaytable)
         writeToExcelFile("specialdaytable",specialdaytable)  
         
         
@@ -916,7 +1000,7 @@ def processRecvAcctTable(SqliteDBFilePath):
     QuerySize = len(RecvAcct)
     if QuerySize>0:
        
-        writeToSQLFile("RecvAcct",RecvAcct)
+        writeToSQLFileLineByLine("RecvAcct",RecvAcct)
         writeToExcelFile("Z_RecvAcct",RecvAcct)  
         
 
@@ -930,7 +1014,7 @@ def processOrderHTable(SqliteDBFilePath):
     QuerySize = len(OrderH)
     if QuerySize>0:
        
-        writeToSQLFile("OrderH",OrderH)
+        writeToSQLFileLineByLine("OrderH",OrderH)
         writeToExcelFile("Z_OrderH",OrderH)  
         
 
@@ -944,7 +1028,7 @@ def processOrderITable(SqliteDBFilePath):
     QuerySize = len(OrderI)
     if QuerySize>0:
        
-        writeToSQLFile("OrderI",OrderI)
+        writeToSQLFileLineByLine("OrderI",OrderI)
         writeToExcelFile("Z_OrderI",OrderI)  
         
         
@@ -982,7 +1066,7 @@ def processTable_Category(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         writeToExcelFile(TableName,SQLData) 
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         
         
 
@@ -1001,8 +1085,8 @@ def processTable_CategoryMenuItem(SqliteDBFilePath):
   
     QuerySize = len(SQLData)
     if QuerySize>0:
-        
-        writeToSQLFile("CategoryMenuItem",SQLData)
+        writeToSQLFileLineByLine("CategoryMenuItem",SQLData)
+        writeToSQLFileLineByLine("CategoryMenuItem",SQLData)
         writeToExcelFile("CategoryMenuItem",SQLData) 
         
 
@@ -1025,7 +1109,7 @@ def processTable_course(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
 
 
@@ -1046,7 +1130,7 @@ def processTable_InstructionLink(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         writeToExcelFile(TableName,SQLData) 
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         
 
 
@@ -1069,7 +1153,7 @@ def processTable_InstructionLinkGroup(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         writeToExcelFile(TableName,SQLData) 
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         
 
 
@@ -1091,7 +1175,7 @@ def processTable_ItemGroupTable(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         writeToExcelFile(TableName,SQLData) 
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         
 
 
@@ -1113,7 +1197,7 @@ def processTable_MenuGroupLinkCategory(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
         writeToExcelFile(TableName,SQLData) 
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         
 
 
@@ -1135,7 +1219,7 @@ def processTable_MenuGroupTable(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
    
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1161,7 +1245,7 @@ def processTable_MenuGroupTimes(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1179,9 +1263,41 @@ def processTable_MenuItem(SqliteDBFilePath):
   
     QuerySize = len(SQLData)
     if QuerySize>0:
-       
-        writeToSQLFile(TableName,SQLData)
-        writeToExcelFile(TableName,SQLData) 
+          SQLData["Price"] = pd.to_numeric(SQLData["Price"] )
+          SQLData["Price1"] = pd.to_numeric(SQLData["Price1"])
+          SQLData["Price2"] = pd.to_numeric(SQLData["Price2"])
+          SQLData["Price3"] = pd.to_numeric(SQLData["Price3"])
+          
+          SQLData["HappyHourPrice1"] = pd.to_numeric(SQLData["HappyHourPrice1"])
+          SQLData["HappyHourPrice2"] = pd.to_numeric(SQLData["HappyHourPrice2"])
+          SQLData["HappyHourPrice3"] = pd.to_numeric(SQLData["HappyHourPrice3"])
+          SQLData["HappyHourPrice4"] = pd.to_numeric(SQLData["HappyHourPrice4"])
+          
+          SQLData["WeekendPrice"] = pd.to_numeric(SQLData["WeekendPrice"])
+          SQLData["WeekendPrice1"] = pd.to_numeric(SQLData["WeekendPrice1"])
+          SQLData["WeekendPrice2"] = pd.to_numeric(SQLData["WeekendPrice2"])
+          SQLData["WeekendPrice3"] = pd.to_numeric(SQLData["WeekendPrice3"])
+          
+          SQLData["PackagePrice"] = pd.to_numeric(SQLData["PackagePrice"] )
+          SQLData["PackagePrice1"] = pd.to_numeric(SQLData["PackagePrice1"] )
+          SQLData["PackagePrice2"] = pd.to_numeric(SQLData["PackagePrice2"] )
+          SQLData["PackagePrice3"] = pd.to_numeric(SQLData["PackagePrice3"] )
+          
+          SQLData["Cost"] = pd.to_numeric(SQLData["Cost"] )
+          SQLData["Cost1"] = pd.to_numeric(SQLData["Cost1"] )
+          SQLData["Cost2"] = pd.to_numeric(SQLData["Cost2"] )
+          SQLData["Cost3"] = pd.to_numeric(SQLData["Cost3"] )
+          
+          SQLData["OnlinePrice1"] = pd.to_numeric(SQLData["OnlinePrice1"] )
+          SQLData["OnlinePrice2"] = pd.to_numeric(SQLData["OnlinePrice2"] )
+          SQLData["OnlinePrice3"] = pd.to_numeric(SQLData["OnlinePrice3"] )
+          SQLData["OnlinePrice4"] = pd.to_numeric(SQLData["OnlinePrice4"] )
+
+          
+          
+          
+          writeToSQLFileLineByLine(TableName,SQLData)
+          writeToExcelFile(TableName,SQLData) 
         
 
 
@@ -1206,7 +1322,7 @@ def processTable_MenuItemRelation(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1228,7 +1344,7 @@ def processTable_PresetNote(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1247,7 +1363,7 @@ def processTable_SubItemGroup(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1267,7 +1383,7 @@ def processTable_SubMenuLinkDetail(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1287,7 +1403,7 @@ def processTable_SubMenuLinkHead(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1307,7 +1423,7 @@ def processTable_PresetNoteGroup(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
@@ -1386,7 +1502,7 @@ def processTable_OOOOO(SqliteDBFilePath):
     QuerySize = len(SQLData)
     if QuerySize>0:
        
-        writeToSQLFile(TableName,SQLData)
+        writeToSQLFileLineByLine(TableName,SQLData)
         writeToExcelFile(TableName,SQLData) 
         
 
