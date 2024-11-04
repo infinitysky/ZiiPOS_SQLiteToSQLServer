@@ -33,13 +33,12 @@ def initSingleSQLFile():
         
     dbsqlquery=open(fileName,'w')
     dbsqlquery.write(r''' 
-                     
+
+-- ALTER DATABASE CURRENT COLLATE Chinese_PRC_CI_AS;
+                                
 EXEC sp_MSforeachtable @command1="ALTER TABLE ? DISABLE TRIGGER ALL;"
                      
-IF COL_LENGTH('OrderCombination', 'PId') IS NOT NULL
-  dbcc checkident(OrderCombination,reseed,1000000)
-ELSE  
-  alter table OrderCombination add PId bigint identity(1000000,1);
+
 IF COL_LENGTH('AccessMenu', 'PId') IS NOT NULL
   dbcc checkident(AccessMenu,reseed,1000000)
 ELSE  
@@ -911,7 +910,23 @@ def processProfileTable(SqliteDBFilePath):
         writeToExcelFile("Profile",Profile)  
         
         
+              
+def processEftMachinePairTable(SqliteDBFilePath):
+    Connection = sqlite3.connect(SqliteDBFilePath)
+    Query = "SELECT PId ,MachineID ,TerminalID ,IntegrationKey ,CreateAt ,IntegratedReceipt ,IntegratedSurcharge ,EFTPOSType ,EftEnvironment ,SerialNumber ,SecretsEncKey ,SecretsHmacKey ,EftPosAddress ,LinklyPosId ,LinklyPosVendorId ,Username ,Password ,MerID ,EftPort ,StationId ,TenantCode ,TenantName FROM EftMachinePair" 
+    
+    EftMachinePair = pd.read_sql_query(Query, Connection)
+    Connection.close()
+  
+    QuerySize = len(EftMachinePair)
+    if QuerySize>0:
         
+        writeToSQLFileLineByLine("EftMachinePair",EftMachinePair)
+        writeToExcelFile("EftMachinePair",EftMachinePair)  
+
+
+
+
         
 def processSequenceIDTable(SqliteDBFilePath):
     Connection = sqlite3.connect(SqliteDBFilePath)
@@ -1256,7 +1271,7 @@ def processTable_MenuGroupTimes(SqliteDBFilePath):
 def processTable_MenuItem(SqliteDBFilePath):
     Connection = sqlite3.connect(SqliteDBFilePath)
     TableName = "MenuItem"
-    Query = "SELECT BarCode , BarCode1 , BarCode2 , BarCode3 , ButtonColor , FontColor , Instruction , Multiple , Price1 , Price2 , Price3 , SubDescription , SubDescription1 , SubDescription2 , SubDescription3 , ItemCode , Description1 , Description2 , Price , TaxRate , Category , Active , PrinterPort , FontName , FontSize , FontBold , FontItalic , FontUnderline , FontStrikeout , AllowDiscount , JobListColor , OpenPrice , PrinterPort1 , PrinterPort2 , HappyHourPrice1 , HappyHourPrice2 , HappyHourPrice3 , HappyHourPrice4 , DefaultQty , SubDescriptionSwap , MainPosition , POSPosition , KitchenScreenFontColor , PrinterPort3 , ItemGroup , OnlyShowOnSubMenu , ButtonColor1 , FontName1 , FontColor1 , FontSize1 , FontBold1 , FontItalic1 , FontUnderline1 , FontStrikeout1 , PhoneOrderPosition , AutoPopSpellInstructionKeyboard , KitchenScreen1 , KitchenScreen2 , KitchenScreen3 , KitchenScreen4 , Scalable , WeekendPrice , WeekendPrice1 , WeekendPrice2 , WeekendPrice3 , PicturePath , Description3 , Description4 , TimeChargeItem , SoldOut , PromotionItem , CanBeRedeemItem , TareWeight , Cost , Cost1 , Cost2 , Cost3 , QuantityFollowByPeopleCount , RedeemPoints , OnlineOrderItem , OtherChargeItem , WeightDivideMeasureAsQty , MeasureWeight , PId , ItemDescription1 , ItemDescription2 , PackagePrice , PackagePrice1 , PackagePrice2 , PackagePrice3 , NoteGroupCode , BorderColor , PictureCloudAddr , SubCategory , ItemDescription3 , ItemDescription4 , MaximumQty , TimeConsumingItem , OnlineStatus , QRCodeStatus , OnlinePrice1 , OnlinePrice2 , OnlinePrice3 , OnlinePrice4 , OnlinePicturePath , OnlinePictureCloudAddr , OnlineDisplayName1 , OnlineDisplayName2 , SoldOutUpdateTime , StockControl , StockQty , DVersion , Version , MenuVersion , AllowGift , DoNotAutoEnterSubmenuPage , SoldOutSyncFlag , XeroAccountCode , XeroAccountId FROM MenuItem" 
+    Query = "SELECT BarCode , BarCode1 , BarCode2 , BarCode3 , ButtonColor , FontColor , Instruction , Multiple , Price1 , Price2 , Price3 , SubDescription , SubDescription1 , SubDescription2 , SubDescription3 , ItemCode , Description1 , Description2 , Price , TaxRate , Category , Active , PrinterPort , FontName , FontSize , FontBold , FontItalic , FontUnderline , FontStrikeout , AllowDiscount , JobListColor , OpenPrice , PrinterPort1 , PrinterPort2 , HappyHourPrice1 , HappyHourPrice2 , HappyHourPrice3 , HappyHourPrice4 , DefaultQty , SubDescriptionSwap , MainPosition , POSPosition , KitchenScreenFontColor , PrinterPort3 , ItemGroup , OnlyShowOnSubMenu , ButtonColor1 , FontName1 , FontColor1 , FontSize1 , FontBold1 , FontItalic1 , FontUnderline1 , FontStrikeout1 , PhoneOrderPosition , AutoPopSpellInstructionKeyboard , KitchenScreen1 , KitchenScreen2 , KitchenScreen3 , KitchenScreen4 , Scalable , WeekendPrice , WeekendPrice1 , WeekendPrice2 , WeekendPrice3 , PicturePath , Description3 , Description4 , TimeChargeItem , SoldOut , PromotionItem , CanBeRedeemItem , TareWeight , Cost , Cost1 , Cost2 , Cost3 , QuantityFollowByPeopleCount , RedeemPoints , OnlineOrderItem , OtherChargeItem , WeightDivideMeasureAsQty , MeasureWeight , PId , ItemDescription1 , ItemDescription2 , PackagePrice , PackagePrice1 , PackagePrice2 , PackagePrice3 , NoteGroupCode , BorderColor , PictureCloudAddr , SubCategory , ItemDescription3 , ItemDescription4 , MaximumQty , TimeConsumingItem , OnlineStatus , QRCodeStatus , OnlinePrice1 , OnlinePrice2 , OnlinePrice3 , OnlinePrice4 , OnlinePicturePath , OnlinePictureCloudAddr , OnlineDisplayName1 , OnlineDisplayName2 , STRFTIME('%Y-%m-%d %H:%M:%S', SoldOutUpdateTime) as SoldOutUpdateTime   , StockControl , StockQty , DVersion , Version , MenuVersion , AllowGift , DoNotAutoEnterSubmenuPage , SoldOutSyncFlag , XeroAccountCode , XeroAccountId FROM MenuItem" 
     
     SQLData = pd.read_sql_query(Query, Connection)
     Connection.close()
@@ -1543,7 +1558,7 @@ def convertTOSQLServerProcess(SqliteDBFilePath):
     processSequenceIDTable(SqliteDBFilePath)
     processTablePageTable(SqliteDBFilePath)
     processTableSetTable(SqliteDBFilePath)
-   
+    processEftMachinePairTable(SqliteDBFilePath)
     processSysparameterTable(SqliteDBFilePath)
     processspecialdaytableTable(SqliteDBFilePath)
     processTable_Category(SqliteDBFilePath)
