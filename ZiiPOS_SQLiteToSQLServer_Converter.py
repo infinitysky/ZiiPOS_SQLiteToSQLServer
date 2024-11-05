@@ -602,11 +602,11 @@ def writeToSingleSQLFileType2(tableName,cols,values):
         f = open(fileName, "a", encoding='utf-8')
         f.write("\ntruncate table "+tableName+" ; ")
         
-    if  tableName!="SequenceID" and tableName!="DiscountSchema":
-        f.write("\nSET IDENTITY_INSERT "+ tableName+" ON; \n")
+    # if  tableName!="SequenceID" and tableName!="DiscountSchema":
+    #     f.write("\nSET IDENTITY_INSERT "+ tableName+" ON; \n")
         
-    f = open(fileName, "a", encoding='utf-8')
-    f.write("\ntruncate table "+tableName+" ; ")
+    # f = open(fileName, "a", encoding='utf-8')
+    # f.write("\ntruncate table "+tableName+" ; ")
     
     if tableName!="SequenceID" and tableName!="DiscountSchema" :
         f.write("\nSET IDENTITY_INSERT "+ tableName+" ON;")
@@ -722,6 +722,7 @@ def writeToSQLFileLineByLine(tableName,Data):
           
     if tableName!="OrderH" and tableName!="OrderI" and tableName!="RecvAcct":
           writeToSingleSQLFileType2(tableName,cols,vals)
+          #writeToSingleSQLFile(tableName,cols,vals)
     
     
   
@@ -920,7 +921,6 @@ def processEftMachinePairTable(SqliteDBFilePath):
   
     QuerySize = len(EftMachinePair)
     if QuerySize>0:
-        
         writeToSQLFileLineByLine("EftMachinePair",EftMachinePair)
         writeToExcelFile("EftMachinePair",EftMachinePair)  
 
@@ -1100,7 +1100,7 @@ def processTable_CategoryMenuItem(SqliteDBFilePath):
   
     QuerySize = len(SQLData)
     if QuerySize>0:
-        writeToSQLFileLineByLine("CategoryMenuItem",SQLData)
+        #writeToSQLFileLineByLine("CategoryMenuItem",SQLData)
         writeToSQLFileLineByLine("CategoryMenuItem",SQLData)
         writeToExcelFile("CategoryMenuItem",SQLData) 
         
@@ -1558,10 +1558,12 @@ def convertTOSQLServerProcess(SqliteDBFilePath):
     processSequenceIDTable(SqliteDBFilePath)
     processTablePageTable(SqliteDBFilePath)
     processTableSetTable(SqliteDBFilePath)
+
     processEftMachinePairTable(SqliteDBFilePath)
+    
     processSysparameterTable(SqliteDBFilePath)
     processspecialdaytableTable(SqliteDBFilePath)
-    processTable_Category(SqliteDBFilePath)
+    #processTable_Category(SqliteDBFilePath)
     
     #--------------Menu---------------------------------
     processTable_Category(SqliteDBFilePath)
