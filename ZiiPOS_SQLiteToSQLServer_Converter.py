@@ -914,7 +914,7 @@ def processProfileTable(SqliteDBFilePath):
               
 def processEftMachinePairTable(SqliteDBFilePath):
     Connection = sqlite3.connect(SqliteDBFilePath)
-    Query = "SELECT PId ,MachineID ,TerminalID ,IntegrationKey ,CreateAt ,IntegratedReceipt ,IntegratedSurcharge ,EFTPOSType ,EftEnvironment ,SerialNumber ,SecretsEncKey ,SecretsHmacKey ,EftPosAddress ,LinklyPosId ,LinklyPosVendorId ,Username ,Password ,MerID ,EftPort ,StationId ,TenantCode ,TenantName FROM EftMachinePair" 
+    Query = "SELECT PId ,MachineID ,TerminalID ,IntegrationKey , STRFTIME('%Y-%m-%d %H:%M:%S', CreateAt) as CreateAt ,IntegratedReceipt ,IntegratedSurcharge ,EFTPOSType ,EftEnvironment ,SerialNumber ,SecretsEncKey ,SecretsHmacKey ,EftPosAddress ,LinklyPosId ,LinklyPosVendorId ,Username ,Password ,MerID ,EftPort ,StationId ,TenantCode ,TenantName FROM EftMachinePair" 
     
     EftMachinePair = pd.read_sql_query(Query, Connection)
     Connection.close()
